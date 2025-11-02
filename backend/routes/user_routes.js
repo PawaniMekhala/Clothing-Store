@@ -1,14 +1,15 @@
 import express from "express";
-import { 
-    registerUser, 
-    loginUser, 
-    getProfile, 
-    logoutUser,
-    updateProfileInfo,
-    updateProfileImage 
+import {
+  registerUser,
+  loginUser,
+  getProfile,
+  logoutUser,
+  updateProfileInfo,
+  updateProfileImage,
+  deleteProfileImage,
 } from "../controllers/user_controller.js";
 import auth from "../middleware/auth_middleware.js";
-import upload from '../middleware/upload.js';
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -20,6 +21,14 @@ router.post("/logout", auth, logoutUser);
 router.put("/profile", auth, updateProfileInfo);
 
 // Update profile image (multipart/form-data with field 'profilePicture')
-router.put("/profile/image", auth, upload.single('profilePicture'), updateProfileImage);
+router.put(
+  "/profile/image",
+  auth,
+  upload.single("profilePicture"),
+  updateProfileImage
+);
+
+// DELETE profile image
+router.delete("/profile/image", auth, deleteProfileImage);
 
 export default router;
