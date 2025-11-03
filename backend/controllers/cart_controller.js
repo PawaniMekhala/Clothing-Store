@@ -180,13 +180,13 @@ export const removeProductFromCart = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // 1️⃣ Find user's cart
+    // Find user's cart
     const cart = await Cart.findOne({ where: { UserID: userId } });
     if (!cart) {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    // 2️⃣ Find the cart item matching the product
+    // Find the cart item matching the product
     const cartItem = await CartItem.findOne({
       where: { CartID: cart.CartID, ProductID: productId },
       include: Product,
@@ -197,10 +197,10 @@ export const removeProductFromCart = async (req, res) => {
         .json({ message: "Product not found in your cart" });
     }
 
-    // 3️⃣ Delete that cart item
+    // Delete that cart item
     await cartItem.destroy();
 
-    // 4️⃣ Recalculate totals for the cart
+    // Recalculate totals for the cart
     const remainingItems = await CartItem.findAll({
       where: { CartID: cart.CartID },
       include: Product,
@@ -218,7 +218,7 @@ export const removeProductFromCart = async (req, res) => {
     cart.TotalPrice = totalPrice.toFixed(2);
     await cart.save();
 
-    // 5️⃣ Respond
+    // Respond
     return res.status(200).json({
       message: "Product removed from cart successfully",
       cart: {
@@ -241,6 +241,102 @@ export const removeProductFromCart = async (req, res) => {
     });
   } catch (error) {
     console.error("Error removing product from cart:", error);
+    return res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+export const updateCartItem = async (req, res) => {
+  try {
+    const userId = req.user?.id; // from auth middleware
+    const { productId } = req.params;
+    const { quantity, color, size } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required" });
+    }
+
+    // Find user's cart
+    const cart = await Cart.findOne({ where: { UserID: userId } });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    // Find cart item by CartID and ProductID
+    const cartItem = await CartItem.findOne({
+      where: { CartID: cart.CartID, ProductID: productId },
+      include: Product,
+    });
+
+    if (!cartItem) {
+      return res
+        .status(404)
+        .json({ message: "Product not found in your cart" });
+    }
+
+    // Validate quantity (if provided)
+    if (quantity !== undefined) {
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return res.status(400).json({ message: "Invalid quantity value" });
+      }
+
+      // Check product stock availability
+      const product = await Product.findByPk(productId);
+      if (product.Quantity < quantity) {
+        return res
+          .status(400)
+          .json({ message: "Insufficient stock available" });
+      }
+
+      cartItem.CIQuantity = quantity;
+    }
+
+    // Update color or size (if provided)
+    if (color !== undefined) cartItem.ProductColor = color;
+    if (size !== undefined) cartItem.ProductSize = size;
+
+    await cartItem.save();
+
+    // Recalculate cart totals
+    const cartItems = await CartItem.findAll({
+      where: { CartID: cart.CartID },
+      include: Product,
+    });
+
+    let totalQuantity = 0;
+    let totalPrice = 0;
+
+    cartItems.forEach((item) => {
+      totalQuantity += item.CIQuantity;
+      totalPrice += item.CIQuantity * parseFloat(item.Product.Price);
+    });
+
+    cart.CQuantity = totalQuantity;
+    cart.TotalPrice = totalPrice.toFixed(2);
+    await cart.save();
+
+    return res.status(200).json({
+      message: "Cart item updated successfully",
+      updatedItem: {
+        ProductID: cartItem.ProductID,
+        ProductName: cartItem.Product.ProductName,
+        Quantity: cartItem.CIQuantity,
+        ProductColor: cartItem.ProductColor,
+        ProductSize: cartItem.ProductSize,
+        Subtotal: (
+          cartItem.CIQuantity * parseFloat(cartItem.Product.Price)
+        ).toFixed(2),
+      },
+      cartSummary: {
+        totalQuantity,
+        totalPrice: totalPrice.toFixed(2),
+      },
+    });
+  } catch (error) {
+    console.error("Error updating cart item:", error);
     return res.status(500).json({ message: error.message || "Server error" });
   }
 };
