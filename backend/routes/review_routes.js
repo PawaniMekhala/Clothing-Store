@@ -3,6 +3,7 @@ import {
   addReview,
   getAllReviewsByProduct,
   updateReview,
+  deleteReview,
 } from "../controllers/review_controller.js";
 import auth from "../middleware/auth_middleware.js";
 
@@ -16,5 +17,8 @@ router.get("/get-all-reviews/:productId", getAllReviewsByProduct);
 
 //update a review
 router.put("/update-review/:reviewId", auth, updateReview);
+
+//delete a review
+router.delete("/delete-review/:reviewId", auth, deleteReview);
 
 export default router;
