@@ -68,7 +68,7 @@ export const getAllReviewsByProduct = async (req, res) => {
           attributes: ["UserID", "FirstName", "LastName"], // only return necessary user fields
         },
       ],
-      order: [["ReviewID", "DESC"]], // optional: latest reviews first
+      order: [["ReviewID", "DESC"]], // latest reviews first
     });
 
     if (!reviews.length) {

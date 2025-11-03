@@ -97,7 +97,7 @@ export const addToCart = async (req, res) => {
 // View user's cart
 export const viewCart = async (req, res) => {
   try {
-    const userId = req.user?.id; // assuming auth middleware adds user info
+    const userId = req.user?.id; // auth middleware adds user info
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }

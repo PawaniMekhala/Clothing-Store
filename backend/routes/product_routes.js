@@ -10,15 +10,15 @@ import upload from "../middleware/upload.js";
 const router = express.Router();
 
 // Get all products
-router.get("/", getAllProducts);
+router.get("/get-all-products", getAllProducts);
 
-// Get products by category (e.g., /products/category/Kid)
+// Get products by category
 router.get("/category/:categoryId", getProductsByCategory);
 
-// Get product details by product ID (e.g., /products/5)
+// Get product details by product ID
 router.get("/:productId", getProductById);
 
-// POST /api/products  (multipart/form-data with field 'productImage')
+//create new product
 router.post("/add/newProduct", upload.single("productImage"), createProduct);
 
 export default router;

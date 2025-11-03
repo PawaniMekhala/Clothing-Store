@@ -17,10 +17,10 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/profile", auth, getProfile);
 router.post("/logout", auth, logoutUser);
-// Update address & phone (JSON body)
-router.put("/profile", auth, updateProfileInfo);
+// Update address & phone
+router.put("/profile-info", auth, updateProfileInfo);
 
-// Update profile image (multipart/form-data with field 'profilePicture')
+// Update profile image
 router.put(
   "/profile/image",
   auth,
@@ -29,6 +29,6 @@ router.put(
 );
 
 // DELETE profile image
-router.delete("/profile/image", auth, deleteProfileImage);
+router.delete("/delete-profile-image", auth, deleteProfileImage);
 
 export default router;
