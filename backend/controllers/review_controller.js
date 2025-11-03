@@ -85,3 +85,34 @@ export const getAllReviewsByProduct = async (req, res) => {
       .json({ message: "Something went wrong while fetching reviews." });
   }
 };
+
+// Update a review
+export const updateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const { rating, comment } = req.body;
+    const userId = req.user?.id;
+
+    const review = await Review.findOne({
+      where: { ReviewID: reviewId, UserID: userId },
+    });
+
+    if (!review) {
+      return res
+        .status(404)
+        .json({ message: "Review not found or you cannot edit this review." });
+    }
+
+    if (rating !== undefined) review.Rating = rating;
+    if (comment !== undefined) review.Comment = comment;
+
+    await review.save();
+
+    res.status(200).json({ message: "Review updated successfully", review });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong while updating the review." });
+  }
+};
