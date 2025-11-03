@@ -1,14 +1,16 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
 import User from "./user_model.js";
+import Product from "./product_model.js";
 
 const Review = sequelize.define(
   "Review",
   {
     ReviewID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       primaryKey: true,
       autoIncrement: true,
+      allowNull: false,
     },
     UserID: {
       type: DataTypes.INTEGER,
@@ -17,7 +19,22 @@ const Review = sequelize.define(
         key: "UserID",
       },
     },
-    Comment: DataTypes.TEXT,
+    ProductID: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: true,
+      references: {
+        model: Product,
+        key: "ProductID",
+      },
+    },
+    Rating: {
+      type: DataTypes.INTEGER, // 1–5 rating for the website
+      allowNull: false,
+    },
+    Comment: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "Review",
@@ -27,7 +44,26 @@ const Review = sequelize.define(
 );
 
 // Relationships
-User.hasMany(Review, { foreignKey: "UserID" });
-Review.belongsTo(User, { foreignKey: "UserID" });
+User.hasMany(Review, {
+  foreignKey: "UserID",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+Review.belongsTo(User, {
+  foreignKey: "UserID",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+Product.hasMany(Review, {
+  foreignKey: "ProductID",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+Review.belongsTo(Product, {
+  foreignKey: "ProductID",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 export default Review;

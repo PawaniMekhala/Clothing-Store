@@ -5,6 +5,7 @@ import userRoutes from "./routes/user_routes.js";
 import productRoutes from "./routes/product_routes.js";
 import tempRoutes from "./routes/temporary_route.js";
 import cartRoutes from "./routes/cart_routes.js";
+import reviewRoutes from "./routes/review_routes.js";
 
 dotenv.config();
 const app = express();
@@ -21,5 +22,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/temp", tempRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/review", reviewRoutes);
 
 export default app;
