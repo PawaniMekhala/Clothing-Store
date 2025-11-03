@@ -1,9 +1,10 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
 import userRoutes from "./routes/user_routes.js";
 import productRoutes from "./routes/product_routes.js";
 import tempRoutes from "./routes/temporary_route.js";
+import cartRoutes from "./routes/cart_routes.js";
 
 dotenv.config();
 const app = express();
@@ -19,5 +20,6 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/temp", tempRoutes);
+app.use("/api/cart", cartRoutes);
 
 export default app;
