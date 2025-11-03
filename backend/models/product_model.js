@@ -6,7 +6,7 @@ const Product = sequelize.define(
   "Product",
   {
     ProductID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       primaryKey: true,
       autoIncrement: true,
     },
@@ -49,7 +49,7 @@ const Product = sequelize.define(
     },
   },
   {
-    tableName: "Product", 
+    tableName: "Product",
     timestamps: false,
     freezeTableName: true,
   }
