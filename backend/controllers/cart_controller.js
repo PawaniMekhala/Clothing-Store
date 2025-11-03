@@ -93,3 +93,79 @@ export const addToCart = async (req, res) => {
     return res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+// View user's cart
+export const viewCart = async (req, res) => {
+  try {
+    const userId = req.user?.id; // assuming auth middleware adds user info
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Find the user's cart
+    const cart = await Cart.findOne({
+      where: { UserID: userId },
+      include: [
+        {
+          model: CartItem,
+          include: [
+            {
+              model: Product,
+              attributes: [
+                "ProductID",
+                "ProductName",
+                "Price",
+                "ImagePath",
+                "ProductColor",
+                "ProductSize",
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    // If no cart found, send empty response
+    if (!cart) {
+      return res.status(200).json({
+        message: "Cart is empty",
+        cart: { items: [], totalQuantity: 0, totalPrice: 0 },
+      });
+    }
+
+    // Compute totals dynamically (in case you want fresh totals)
+    let totalQuantity = 0;
+    let totalPrice = 0;
+
+    cart.CartItems.forEach((item) => {
+      totalQuantity += item.CIQuantity;
+      totalPrice += item.CIQuantity * parseFloat(item.Product.Price);
+    });
+
+    // Return response
+    return res.status(200).json({
+      message: "Cart retrieved successfully",
+      cart: {
+        CartID: cart.CartID,
+        totalQuantity,
+        totalPrice: totalPrice.toFixed(2),
+        items: cart.CartItems.map((item) => ({
+          CartItemID: item.CartItemID,
+          ProductID: item.ProductID,
+          ProductName: item.Product.ProductName,
+          Price: item.Product.Price,
+          Image: item.Product.ImagePath,
+          Quantity: item.CIQuantity,
+          ProductColor: item.ProductColor,
+          ProductSize: item.ProductSize,
+          Subtotal: (item.CIQuantity * parseFloat(item.Product.Price)).toFixed(
+            2
+          ),
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error in viewCart:", error);
+    return res.status(500).json({ message: error.message || "Server error" });
+  }
+};
