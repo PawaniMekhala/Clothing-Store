@@ -86,6 +86,7 @@ CREATE TABLE `Review` (
   `ReviewID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `UserID` INT UNSIGNED NOT NULL,
   `ProductID` INT UNSIGNED,
+  `Rating` INT NOT NULL,
   `Comment` TEXT,
   PRIMARY KEY (`ReviewID`),
   FOREIGN KEY (`UserID`) REFERENCES `User`(`UserID`)
