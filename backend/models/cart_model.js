@@ -6,12 +6,12 @@ const Cart = sequelize.define(
   "Cart",
   {
     CartID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       primaryKey: true,
       autoIncrement: true,
     },
     UserID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       references: {
         model: "User",
         key: "UserID",
@@ -32,4 +32,3 @@ User.hasOne(Cart, { foreignKey: "UserID" });
 Cart.belongsTo(User, { foreignKey: "UserID" });
 
 export default Cart;
-
