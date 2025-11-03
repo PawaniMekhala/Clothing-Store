@@ -116,3 +116,36 @@ export const updateReview = async (req, res) => {
       .json({ message: "Something went wrong while updating the review." });
   }
 };
+
+// Delete a review
+export const deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params; // Review ID to delete
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    // Find the review and make sure it belongs to the user
+    const review = await Review.findOne({
+      where: { ReviewID: reviewId, UserID: userId },
+    });
+
+    if (!review) {
+      return res.status(404).json({
+        message: "Review not found or you cannot delete this review.",
+      });
+    }
+
+    // Delete the review
+    await review.destroy();
+
+    res.status(200).json({ message: "Review deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong while deleting the review." });
+  }
+};
