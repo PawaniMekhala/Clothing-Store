@@ -169,3 +169,78 @@ export const viewCart = async (req, res) => {
     return res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+// Remove product from cart
+export const removeProductFromCart = async (req, res) => {
+  try {
+    const userId = req.user?.id; // from authentication middleware
+    const { productId } = req.params; // product id from route param
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // 1️⃣ Find user's cart
+    const cart = await Cart.findOne({ where: { UserID: userId } });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
+
+    // 2️⃣ Find the cart item matching the product
+    const cartItem = await CartItem.findOne({
+      where: { CartID: cart.CartID, ProductID: productId },
+      include: Product,
+    });
+    if (!cartItem) {
+      return res
+        .status(404)
+        .json({ message: "Product not found in your cart" });
+    }
+
+    // 3️⃣ Delete that cart item
+    await cartItem.destroy();
+
+    // 4️⃣ Recalculate totals for the cart
+    const remainingItems = await CartItem.findAll({
+      where: { CartID: cart.CartID },
+      include: Product,
+    });
+
+    let totalQuantity = 0;
+    let totalPrice = 0;
+
+    remainingItems.forEach((item) => {
+      totalQuantity += item.CIQuantity;
+      totalPrice += item.CIQuantity * parseFloat(item.Product.Price);
+    });
+
+    cart.CQuantity = totalQuantity;
+    cart.TotalPrice = totalPrice.toFixed(2);
+    await cart.save();
+
+    // 5️⃣ Respond
+    return res.status(200).json({
+      message: "Product removed from cart successfully",
+      cart: {
+        CartID: cart.CartID,
+        totalQuantity,
+        totalPrice: totalPrice.toFixed(2),
+        items: remainingItems.map((item) => ({
+          CartItemID: item.CartItemID,
+          ProductID: item.ProductID,
+          ProductName: item.Product.ProductName,
+          Price: item.Product.Price,
+          Quantity: item.CIQuantity,
+          ProductColor: item.ProductColor,
+          ProductSize: item.ProductSize,
+          Subtotal: (item.CIQuantity * parseFloat(item.Product.Price)).toFixed(
+            2
+          ),
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Error removing product from cart:", error);
+    return res.status(500).json({ message: error.message || "Server error" });
+  }
+};
