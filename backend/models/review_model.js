@@ -13,7 +13,7 @@ const Review = sequelize.define(
       allowNull: false,
     },
     UserID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       references: {
         model: "User",
         key: "UserID",
@@ -21,11 +21,13 @@ const Review = sequelize.define(
     },
     ProductID: {
       type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: true,
+      allowNull: false,
       references: {
-        model: Product,
+        model: "Product",
         key: "ProductID",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     Rating: {
       type: DataTypes.INTEGER, // 1–5 rating for the website
