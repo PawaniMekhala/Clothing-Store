@@ -7,23 +7,29 @@ const CartItem = sequelize.define(
   "CartItem",
   {
     CartItemID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
       primaryKey: true,
       autoIncrement: true,
     },
     CartID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
       references: {
         model: "Cart",
         key: "CartID",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     ProductID: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
       references: {
         model: "Product",
         key: "ProductID",
       },
+      onDelete: "CASCADE",
+      onUpdate: "CASCADE",
     },
     CIQuantity: DataTypes.INTEGER,
     ProductColor: DataTypes.STRING,
@@ -37,10 +43,10 @@ const CartItem = sequelize.define(
 );
 
 // Relationships
-Cart.hasMany(CartItem, { foreignKey: "CartID" });
+Cart.hasMany(CartItem, { foreignKey: "CartID", onDelete: "CASCADE" });
 CartItem.belongsTo(Cart, { foreignKey: "CartID" });
 
-Product.hasMany(CartItem, { foreignKey: "ProductID" });
+Product.hasMany(CartItem, { foreignKey: "ProductID", onDelete: "CASCADE" });
 CartItem.belongsTo(Product, { foreignKey: "ProductID" });
 
 export default CartItem;
