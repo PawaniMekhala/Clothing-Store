@@ -3,7 +3,7 @@ import {
   getAllProducts,
   getProductsByCategory,
   getProductById,
-  createProduct,
+  createProduct,updateProductImage
 } from "../controllers/product_controller.js";
 import upload from "../middleware/upload.js";
 
@@ -20,5 +20,8 @@ router.get("/:productId", getProductById);
 
 //create new product
 router.post("/add/newProduct", upload.single("productImage"), createProduct);
+
+// PUT: update product image
+router.put("/update-image/:productId", upload.single("productImage"), updateProductImage);
 
 export default router;
