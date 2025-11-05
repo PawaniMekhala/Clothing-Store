@@ -96,3 +96,9 @@ CREATE TABLE `Review` (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+INSERT INTO `category` (`CategoryName`) 
+VALUES 
+('Men'),
+('Women'),
+('Kid');
