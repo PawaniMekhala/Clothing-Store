@@ -32,7 +32,9 @@ export const CartProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await cartAPI.getCart();
-      const items = response.data?.cartItems || [];
+      const cartData = response.data?.cart;
+      const items = cartData?.items || [];
+      // Set the cart items to state
       setCartItems(Array.isArray(items) ? items : []);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -114,7 +116,7 @@ export const CartProvider = ({ children }) => {
     if (!Array.isArray(cartItems)) return 0;
     return cartItems.reduce(
       (total, item) =>
-        total + (item.Product?.Price || 0) * (item.CIQuantity || 1),
+        total + parseFloat(item.Price || 0) * (item.CIQuantity || 1),
       0
     );
   };
