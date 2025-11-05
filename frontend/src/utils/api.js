@@ -50,9 +50,9 @@ export const authAPI = {
 export const productAPI = {
     getAllProducts: () => api.get('/products/get-all-products'),
 
-    getProductsByCategory: (category) => api.get(`/products/get-products-by-category/${category}`),
+    getProductsByCategory: (categoryId) => api.get(`/products/category/${categoryId}`),
 
-    getProductById: (id) => api.get(`/products/get-product-by-id/${id}`),
+    getProductById: (productId) => api.get(`/products/${productId}`),
 };
 
 export const cartAPI = {
