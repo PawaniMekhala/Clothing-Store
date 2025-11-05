@@ -56,10 +56,10 @@ export const productAPI = {
 };
 
 export const cartAPI = {
-    getCart: () => api.get('/cart'),
-    addToCart: (data) => api.post('/cart', data),
-    updateCartItem: (itemId, data) => api.put(`/cart/${itemId}`, data),
-    deleteCartItem: (itemId) => api.delete(`/cart/${itemId}`),
+    getCart: () => api.get('/cart/view'),
+    addToCart: (data) => api.post('/cart/add', data),
+    updateCartItem: (productId, data) => api.put(`/cart/update-cart/${productId}`, data),
+    deleteCartItem: (productId) => api.delete(`/cart/remove-item/${productId}`),
 };
 
 export const reviewAPI = {
