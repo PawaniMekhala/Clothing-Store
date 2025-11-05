@@ -122,3 +122,49 @@ export const createProduct = async (req, res) => {
     return res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+// Update product image
+export const updateProductImage = async (req, res) => {
+  try {
+    const { productId } = req.params; // product id from URL
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ message: "No image uploaded." });
+    }
+
+    // Find the product
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    // Delete old image from Cloudinary (optional but clean)
+    if (product.ImagePath) {
+      try {
+        const publicIdMatch = product.ImagePath.match(
+          /\/product_images\/([^/.]+)/
+        );
+        if (publicIdMatch) {
+          const publicId = `product_images/${publicIdMatch[1]}`;
+          await cloudinary.uploader.destroy(publicId);
+        }
+      } catch (err) {
+        console.warn("Failed to delete old image:", err.message);
+      }
+    }
+
+    // Cloudinary URL — multer-storage-cloudinary provides secure_url or path
+    const imageUrl = req.file.secure_url || req.file.path;
+    product.ImagePath = imageUrl;
+
+    await product.save();
+
+    return res.json({
+      message: "Product image updated successfully!",
+      imageUrl,
+      product: product.toJSON(),
+    });
+  } catch (error) {
+    console.error("Error updating product image:", error);
+    return res.status(500).json({ message: error.message || "Server error" });
+  }
+};
