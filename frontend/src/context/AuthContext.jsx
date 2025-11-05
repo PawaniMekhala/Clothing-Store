@@ -6,123 +6,82 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within an AuthProvider');
     return context;
+};
+
+const normalizeUser = (u) => {
+    if (!u) return null;
+    return {
+        id: u.UserID || u.id || null,
+        name: `${u.FirstName || ''} ${u.LastName || ''}`.trim(),
+        email: u.Email || u.email || '',
+        phone: u.Phone || u.phone || '',
+        address: u.Address || u.address || '',
+        profileImage: u.ProfilePicture || u.profileImage || '',
+        token: u.token || null,
+    };
 };
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Load stored user & token on mount
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
-
-        if (storedUser && token) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (error) {
-                console.error('Error parsing stored user:', error);
-                localStorage.removeItem('user');
-                localStorage.removeItem('token');
-            }
+        if (!token) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+
+        (async () => {
+            try {
+                const res = await authAPI.getProfile();
+                const data = res.data;
+                const serverUser = data.user || data;
+
+                const normalized = normalizeUser(serverUser);
+                setUser(normalized);
+                localStorage.setItem('user', JSON.stringify(normalized));
+            } catch (err) {
+                console.error('Failed to fetch profile on mount', err);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        })();
     }, []);
 
-    // login unchanged
-    // const login = async (email, password) => {
-    //     try {
-    //         const response = await authAPI.login({ email, password });
-    //         const { token, user: userData } = response.data;
-
-    //         localStorage.setItem('token', token);
-    //         localStorage.setItem('user', JSON.stringify(userData));
-    //         setUser(userData);
-
-    //         toast.success('Logged in successfully!');
-    //         return { success: true };
-    //     } catch (error) {
-    //         const message = error.response?.data?.message || 'Login failed';
-    //         toast.error(message);
-    //         return { success: false, error: message };
-    //     }
-    // };
-    // debug-friendly login
     const login = async (email, password) => {
         try {
-            console.debug('[Auth] login request payload:', { email, password });
-
             const response = await authAPI.login({ email, password });
-
-            console.debug('[Auth] login response status:', response.status);
-            console.debug('[Auth] login response.data:', response.data);
-
-            // adapt to whatever your backend returns — this assumes { token, user } on success
             const { token, user: userData } = response.data;
 
-            if (!token || !userData) {
-                // unexpected success-shape — log and return helpful error
-                console.warn('[Auth] login: missing token/user in response', response.data);
-                return { success: false, error: 'Login succeeded but response missing token or user.' };
-            }
-
+            const normalized = normalizeUser({ ...userData, token });
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(userData));
-            setUser(userData);
-
-            // ensure axios interceptor will read the token from localStorage on next requests
-            // (your api interceptor already sets header from localStorage)
+            localStorage.setItem('user', JSON.stringify(normalized));
+            setUser(normalized);
 
             toast.success('Logged in successfully!');
             return { success: true };
-        } catch (err) {
-            // Detailed logging for debugging:
-            console.error('[Auth] login error:', err);
-
-            // If axios error with response, log that body too
-            const resp = err.response;
-            if (resp) {
-                console.error('[Auth] login error response.status:', resp.status);
-                console.error('[Auth] login error response.data:', resp.data);
-            } else {
-                console.error('[Auth] login no response (network or CORS)', err.message);
-            }
-
-            // derive error message for UI
-            const message =
-                resp?.data?.message ||
-                resp?.data?.error ||
-                (resp && JSON.stringify(resp.data)) ||
-                err.message ||
-                'Login failed';
-
+        } catch (error) {
+            const message = error.response?.data?.message || 'Login failed';
             toast.error(message);
             return { success: false, error: message };
         }
     };
 
-    // register now accepts an object with firstName & lastName
-    // Usage: register({ firstName, lastName, email, password })
     const register = async ({ firstName, lastName, email, password }) => {
         try {
-            const payload = {
-                firstName: firstName?.trim(),
-                lastName: lastName?.trim(),
-                email: email?.trim(),
-                password,
-            };
+            const res = await authAPI.register({ firstName, lastName, email, password });
+            const { token, user: userData } = res.data;
 
-            const response = await authAPI.register(payload);
-            // Expecting response.data to include { token, user }
-            const { token, user: userData } = response.data;
-
+            const normalized = normalizeUser({ ...userData, token });
             localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(userData));
-            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(normalized));
+            setUser(normalized);
 
             toast.success('Registration successful!');
             return { success: true };
@@ -133,26 +92,25 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        toast.success('Logged out successfully!');
-    };
-
     const updateProfile = async (data) => {
         try {
-            const response = await authAPI.updateProfile(data);
-            // assume API returns the updated user object in response.data
-            const updatedUser = response.data;
+            const payload = {
+                address: data.address || '',
+                phone: data.phone || '',
+            };
 
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            setUser(updatedUser);
+            const res = await authAPI.updateProfile(payload);
+            const updated = res.data.user || res.data;
+
+            const normalized = normalizeUser(updated);
+            setUser(normalized);
+            localStorage.setItem('user', JSON.stringify(normalized));
 
             toast.success('Profile updated successfully!');
-            return { success: true };
-        } catch (error) {
-            const message = error.response?.data?.message || 'Update failed';
+            return { success: true, user: normalized };
+        } catch (err) {
+            console.error('updateProfile error', err);
+            const message = err.response?.data?.message || 'Profile update failed';
             toast.error(message);
             return { success: false, error: message };
         }
@@ -160,36 +118,94 @@ export const AuthProvider = ({ children }) => {
 
     const uploadProfileImage = async (file) => {
         try {
-            const response = await authAPI.uploadProfileImage(file);
-            const updatedUser = response.data;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Please log in again.');
+                return { success: false, error: 'No auth token found' };
+            }
 
-            localStorage.setItem('user', JSON.stringify(updatedUser));
+            const formData = new FormData();
+            formData.append('profilePicture', file);
+
+            const response = await fetch('http://localhost:5500/api/users/profile/image', {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            const text = await response.text();
+            let data;
+
+            if (text.startsWith('<!DOCTYPE html>')) {
+                alert('Session expired or server error. Please log in again.');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+                return { success: false, error: 'Invalid or expired token' };
+            }
+
+            try {
+                data = JSON.parse(text);
+            } catch {
+                alert('Unexpected server response.');
+                return { success: false, error: 'Invalid server response' };
+            }
+
+            if (!response.ok) {
+                const message = data.message || 'Upload failed';
+                alert(message);
+                return { success: false, error: message };
+            }
+
+            const newProfileImage = data.imageUrl || data.user?.ProfilePicture || data.user?.profileImage;
+            const updatedUser = { ...user, profileImage: newProfileImage };
+
             setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
 
-            toast.success('Profile image uploaded successfully!');
-            return { success: true };
+            alert('✅ Profile image updated successfully!');
+            return { success: true, user: updatedUser };
         } catch (error) {
-            const message = error.response?.data?.message || 'Upload failed';
-            toast.error(message);
-            return { success: false, error: message };
+            console.error('❌ Upload error:', error);
+            alert('Something went wrong during upload.');
+            return { success: false, error: error.message };
         }
     };
 
     const deleteProfileImage = async () => {
         try {
-            const response = await authAPI.deleteProfileImage();
-            const updatedUser = response.data;
+            const response = await fetch('http://localhost:5500/api/users/profile/image', {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${user?.token}`,
+                },
+            });
 
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            setUser(updatedUser);
+            const data = await response.json();
 
-            toast.success('Profile image deleted successfully!');
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to delete image');
+            }
+
+            setUser((prev) => ({
+                ...prev,
+                profileImage: null,
+            }));
+
             return { success: true };
         } catch (error) {
-            const message = error.response?.data?.message || 'Delete failed';
-            toast.error(message);
-            return { success: false, error: message };
+            console.error('Delete image error:', error);
+            return { success: false, error: error.message };
         }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        toast.success('Logged out successfully!');
     };
 
     const value = {

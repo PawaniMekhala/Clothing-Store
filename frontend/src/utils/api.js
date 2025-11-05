@@ -1,9 +1,7 @@
-// src/utils/api.js
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500/api';
 
-// Create axios instance with default config
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -11,7 +9,6 @@ const api = axios.create({
     },
 });
 
-// Add token to requests if available
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -36,28 +33,26 @@ api.interceptors.response.use(
     }
 );
 
-// === AUTH APIs: MATCH BACKEND (uses "users" not "auth") ===
-// Register expects: { firstName, lastName, email, password }
-// Login expects: { email, password }
 export const authAPI = {
     register: (data) => api.post('/users/register', data),
     login: (data) => api.post('/users/login', data),
-    updateProfile: (data) => api.put('/users/profile', data),
+    getProfile: () => api.get('/users/profile'),
+    updateProfile: (data) => api.put('/users/profile-info', data),
     uploadProfileImage: (file) => {
         const formData = new FormData();
-        formData.append('image', file);
-        return api.post('/users/profile/image', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        formData.append('profilePicture', file);
+        return api.put('/users/profile/image', formData);
     },
     deleteProfileImage: () => api.delete('/users/profile/image'),
 };
 
-// other APIs (adjust paths if needed)
+// other APIs
 export const productAPI = {
-    getAllProducts: () => api.get('/products'),
-    getProductsByCategory: (category) => api.get(`/products/category/${category}`),
-    getProductById: (id) => api.get(`/products/${id}`),
+    getAllProducts: () => api.get('/products/get-all-products'),
+
+    getProductsByCategory: (category) => api.get(`/products/get-products-by-category/${category}`),
+
+    getProductById: (id) => api.get(`/products/get-product-by-id/${id}`),
 };
 
 export const cartAPI = {
