@@ -53,13 +53,14 @@ export const cartAPI = {
     addToCart: (data) => api.post('/cart/add', data),
     updateCartItem: (productId, data) => api.put(`/cart/update-cart/${productId}`, data),
     deleteCartItem: (productId) => api.delete(`/cart/remove-item/${productId}`),
+    clearCart: () => api.delete(`/cart/clear`),
 };
 
 export const reviewAPI = {
-    getReviews: (productId) => api.get(`/reviews/product/${productId}`),
-    addReview: (data) => api.post('/reviews', data),
-    updateReview: (reviewId, data) => api.put(`/reviews/${reviewId}`, data),
-    deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}`),
+    getReviews: (productId) => api.get(`/review/get-all-reviews/${productId}`),
+    addReview: (productId,data) => api.post(`/review/add-review/${productId}`, data),
+    updateReview: (reviewId, data) => api.put(`/review/update-review/${reviewId}`, data),
+    deleteReview: (reviewId) => api.delete(`/review/delete-review/${reviewId}`),
 };
 
 export default api;
