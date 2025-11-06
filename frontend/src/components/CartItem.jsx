@@ -2,9 +2,12 @@ import { useCart } from "../context/CartContext";
 import { useState } from "react";
 
 const CartItem = ({ item }) => {
-  const { updateCartItem, removeFromCart } = useCart();
+  const { updateCartItem, removeFromCart, fetchCart } = useCart();
   const [quantity, setQuantity] = useState(item.Quantity);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  console.log("Cart item:", item);
+
 
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1 || isUpdating) return;
@@ -12,13 +15,20 @@ const CartItem = ({ item }) => {
     setQuantity(newQuantity);
     setIsUpdating(true);
 
-    await updateCartItem(item.ProductID, newQuantity);
+    const result = await updateCartItem(item.ProductID, { quantity: newQuantity });
+    if (result?.success) {
+      await fetchCart(); // refresh updated cart
+    }
+
     setIsUpdating(false);
   };
 
   const handleRemove = async () => {
     setIsUpdating(true);
-    await removeFromCart(iitem.ProductID);
+    const result = await removeFromCart(item.ProductID);
+    if (result?.success) {
+      await fetchCart();
+    }
     setIsUpdating(false);
   };
 
@@ -36,7 +46,6 @@ const CartItem = ({ item }) => {
         <div className="flex-1">
           <h3 className="font-semibold text-lg mb-1">{item.ProductName}</h3>
           <p className="text-gray-600 text-sm mb-2">
-            {" "}
             Rs. {parseFloat(item.Price).toFixed(2)}
           </p>
 
@@ -96,5 +105,6 @@ const CartItem = ({ item }) => {
     </div>
   );
 };
+
 
 export default CartItem;

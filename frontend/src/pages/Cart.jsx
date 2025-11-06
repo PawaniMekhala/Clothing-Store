@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import CartItem from '../components/CartItem';
 
 const Cart = () => {
-  const { cartItems, loading, getCartTotal, fetchCart } = useCart();
+  const { cartItems, loading, getCartTotal, fetchCart, updateCartItem, removeFromCart } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
@@ -44,7 +44,12 @@ const Cart = () => {
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <CartItem key={item._id} item={item} />
+                <CartItem
+                  key={item._id || item.productId}
+                  item={item}
+                  onUpdate={updateCartItem}
+                  onRemove={removeFromCart}
+                />
               ))}
             </div>
 
@@ -52,7 +57,7 @@ const Cart = () => {
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
                 <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
-                
+
                 <div className="space-y-4 mb-6">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal</span>
@@ -82,7 +87,7 @@ const Cart = () => {
                 >
                   Proceed to Checkout
                 </Link>
-                
+
                 <Link
                   to="/"
                   className="btn-secondary w-full text-center block"
@@ -99,4 +104,3 @@ const Cart = () => {
 };
 
 export default Cart;
-
