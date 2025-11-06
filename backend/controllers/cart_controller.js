@@ -340,3 +340,32 @@ export const updateCartItem = async (req, res) => {
     return res.status(500).json({ message: error.message || "Server error" });
   }
 };
+
+export const clearCart = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+      if (!userId) {
+      return res.status(400).json({ message: "User ID not found in request (auth middleware issue)." });
+    }
+
+    // Check if user cart exists
+    const cart = await Cart.findOne({ where: { UserID: userId } });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found for this user." });
+    }
+
+    // Delete all items in the cart
+    await CartItem.destroy({ where: { CartID: cart.CartID } });
+
+    // Reset totals in the cart
+    cart.CQuantity = 0;
+    cart.TotalPrice = 0.00;
+    await cart.save();
+
+    return res.status(200).json({ message: "Cart cleared successfully." });
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    res.status(500).json({ message: "Internal server error.", error: error.message });
+  }
+};
+
