@@ -1,38 +1,62 @@
-import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { reviewAPI } from '../utils/api';
-import { toast } from 'react-hot-toast';
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { reviewAPI } from "../utils/api";
+import { toast } from "react-hot-toast";
+
+const getId = (r) => r._id ?? r.id ?? r.ReviewID ?? null;
+const getUserId = (u) => u?._id ?? u?.id ?? u?.UserID ?? null;
 
 const ReviewCard = ({ review, onUpdate, onDelete }) => {
   const { user } = useAuth();
-  const isOwner = user?._id === review.user?._id;
   const [isEditing, setIsEditing] = useState(false);
   const [rating, setRating] = useState(review.rating);
   const [comment, setComment] = useState(review.comment);
 
+  const ownerId = getUserId(review.user) ?? review.UserID ?? null;
+  const currentUserId = user?._id ?? user?.id ?? user?.UserID ?? null;
+  const isOwner =
+    currentUserId && ownerId && currentUserId.toString() === ownerId.toString();
+
   const handleUpdate = async () => {
+    const reviewId = getId(review);
+    if (!reviewId) return toast.error("Invalid review ID");
     try {
-      const response = await reviewAPI.updateReview(review._id, {
+      const response = await reviewAPI.updateReview(reviewId, {
         rating,
         comment,
       });
-      onUpdate(response.data);
+      // normalize returned data (backend may return updated review directly or under .review)
+      const updated = response.data?.review ?? response.data;
+      onUpdate?.({
+        _id: updated._id ?? updated.id ?? updated.ReviewID,
+        rating: updated.rating ?? updated.Rating,
+        comment: updated.comment ?? updated.Comment,
+        user: updated.user ?? review.user,
+        createdAt: updated.createdAt ?? updated.created_at ?? review.createdAt,
+        ...updated,
+      });
       setIsEditing(false);
-      toast.success('Review updated!');
+      toast.success("Review updated!");
     } catch (error) {
-      toast.error('Failed to update review');
+      console.error("Update review error:", error);
+      console.error("Server response:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to update review");
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this review?')) {
-      try {
-        await reviewAPI.deleteReview(review._id);
-        onDelete(review._id);
-        toast.success('Review deleted!');
-      } catch (error) {
-        toast.error('Failed to delete review');
-      }
+    const reviewId = getId(review);
+    if (!reviewId) return toast.error("Invalid review ID");
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    try {
+      const res = await reviewAPI.deleteReview(reviewId);
+      // optional: backend might return { id } or { message }
+      onDelete?.(reviewId);
+      toast.success("Review deleted!");
+    } catch (error) {
+      console.error("Delete review error:", error);
+      console.error("Server response:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to delete review");
     }
   };
 
@@ -45,21 +69,29 @@ const ReviewCard = ({ review, onUpdate, onDelete }) => {
               {review.user?.profileImage ? (
                 <img
                   src={review.user.profileImage}
-                  alt={review.user.name}
+                  alt={review.user.name ?? "User"}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-                  {review.user?.name?.charAt(0).toUpperCase()}
+                  {(review.user?.name ?? review.user?.userName ?? "U")
+                    ?.charAt(0)
+                    ?.toUpperCase()}
                 </div>
               )}
               <div>
-                <h4 className="font-semibold">{review.user?.name}</h4>
+                <h4 className="font-semibold">
+                  {review.user?.name ?? review.user?.userName ?? "User"}
+                </h4>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <svg
                       key={i}
-                      className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                      className={`w-4 h-4 ${
+                        i < (review.rating ?? review.Rating ?? rating)
+                          ? "text-yellow-400"
+                          : "text-gray-300"
+                      }`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -70,16 +102,24 @@ const ReviewCard = ({ review, onUpdate, onDelete }) => {
               </div>
             </div>
             <span className="text-sm text-gray-500">
-              {new Date(review.createdAt).toLocaleDateString()}
+              {new Date(
+                review.createdAt ?? review.created_at ?? Date.now()
+              ).toLocaleDateString()}
             </span>
           </div>
-          
-          <p className="text-gray-700 mb-3">{review.comment}</p>
+
+          <p className="text-gray-700 mb-3">
+            {review.comment ?? review.Comment}
+          </p>
 
           {isOwner && (
             <div className="flex space-x-2">
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  setIsEditing(true);
+                  setRating(review.rating ?? review.Rating ?? rating);
+                  setComment(review.comment ?? review.Comment ?? comment);
+                }}
                 className="text-primary-600 hover:text-primary-700 text-sm font-medium"
               >
                 Edit
@@ -103,14 +143,16 @@ const ReviewCard = ({ review, onUpdate, onDelete }) => {
                   key={i}
                   type="button"
                   onClick={() => setRating(i + 1)}
-                  className={`text-2xl ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                  className={`text-2xl ${
+                    i < rating ? "text-yellow-400" : "text-gray-300"
+                  }`}
                 >
                   ★
                 </button>
               ))}
             </div>
           </div>
-          
+
           <div className="mb-3">
             <label className="block text-sm font-medium mb-2">Comment</label>
             <textarea
@@ -128,8 +170,8 @@ const ReviewCard = ({ review, onUpdate, onDelete }) => {
             <button
               onClick={() => {
                 setIsEditing(false);
-                setRating(review.rating);
-                setComment(review.comment);
+                setRating(review.rating ?? review.Rating ?? rating);
+                setComment(review.comment ?? review.Comment ?? comment);
               }}
               className="btn-secondary"
             >
@@ -143,4 +185,3 @@ const ReviewCard = ({ review, onUpdate, onDelete }) => {
 };
 
 export default ReviewCard;
-
