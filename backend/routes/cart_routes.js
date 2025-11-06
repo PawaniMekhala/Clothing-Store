@@ -3,7 +3,7 @@ import {
   addToCart,
   viewCart,
   removeProductFromCart,
-  updateCartItem,
+  updateCartItem,clearCart
 } from "../controllers/cart_controller.js";
 import auth from "../middleware/auth_middleware.js";
 
@@ -15,7 +15,9 @@ router.post("/add", auth, addToCart);
 router.get("/view", auth, viewCart);
 // remove item from cart
 router.delete("/remove-item/:productId", auth, removeProductFromCart);
-// update product quantity,color,sie
+// update product quantity,color,size
 router.put("/update-cart/:productId", auth, updateCartItem);
+// Clear the entire cart
+router.delete("/clear", auth, clearCart);
 
 export default router;
