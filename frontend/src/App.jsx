@@ -13,6 +13,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 
 function App() {
     return (
@@ -31,6 +32,7 @@ function App() {
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/register" element={<Register />} />
                                 <Route path="/profile" element={<Profile />} />
+                                <Route path="/checkout" element={<CheckoutSuccess />} />
                             </Routes>
                         </main>
                         <Footer />

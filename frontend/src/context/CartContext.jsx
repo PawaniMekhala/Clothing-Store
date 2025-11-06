@@ -26,16 +26,14 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated]);
 
+  // Fetch entire cart
   const fetchCart = async () => {
     if (!isAuthenticated) return;
-
     setLoading(true);
     try {
       const response = await cartAPI.getCart();
       const cartData = response.data?.cart;
-      const items = cartData?.items || [];
-      // Set the cart items to state
-      setCartItems(Array.isArray(items) ? items : []);
+      setCartItems(cartData?.items || []);
     } catch (error) {
       console.error("Error fetching cart:", error);
       setCartItems([]);
@@ -44,6 +42,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Add to cart 
   const addToCart = async (productId, quantity = 1, size, color) => {
     if (!isAuthenticated) {
       toast.error("Please login to add items to cart");
@@ -60,7 +59,7 @@ export const CartProvider = ({ children }) => {
       });
 
       if (response.data?.cartItem) {
-        setCartItems((prev) => [...prev, response.data.cartItem]); // add new item to list
+        setCartItems((prev) => [...prev, response.data.cartItem]);
       } else if (Array.isArray(response.data)) {
         setCartItems(response.data);
       }
@@ -76,32 +75,43 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateCartItem = async (itemId, quantity) => {
+  // Update cart item 
+  const updateCartItem = async (productId, updatedData) => {
+  if (!isAuthenticated) return;
+  setLoading(true);
+
+  try {
+    const response = await cartAPI.updateCartItem(productId, updatedData);
+    toast.success(response.data?.message || "Cart item updated successfully");
+
+    
+    await fetchCart();
+
+    return { success: true };
+  } catch (error) {
+    const message = error.response?.data?.message || "Failed to update cart";
+    toast.error(message);
+    return { success: false, error: message };
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Remove from cart
+  const removeFromCart = async (productId) => {
     if (!isAuthenticated) return;
-
     setLoading(true);
-    try {
-      const response = await cartAPI.updateCartItem(itemId, { quantity });
-      setCartItems(response.data || []);
-      toast.success("Cart updated!");
-      return { success: true };
-    } catch (error) {
-      const message = error.response?.data?.message || "Failed to update cart";
-      toast.error(message);
-      return { success: false, error: message };
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const removeFromCart = async (itemId) => {
-    if (!isAuthenticated) return;
-
-    setLoading(true);
     try {
-      const response = await cartAPI.deleteCartItem(itemId);
-      setCartItems(response.data || []);
-      toast.success("Item removed from cart!");
+      const response = await cartAPI.deleteCartItem(productId);
+      const updatedCart = response.data?.cart;
+
+      if (updatedCart?.items) {
+        setCartItems(updatedCart.items);
+      }
+
+      toast.success(response.data?.message || "Item removed from cart!");
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.message || "Failed to remove item";
@@ -113,18 +123,27 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartTotal = () => {
-    if (!Array.isArray(cartItems)) return 0;
-    return cartItems.reduce(
-      (total, item) =>
-        total + parseFloat(item.Price || 0) * (item.CIQuantity || 1),
-      0
-    );
-  };
+  if (!cartItems || cartItems.length === 0) return 0;
+
+  return cartItems.reduce((total, item) => {
+    const price = parseFloat(item.Price);
+    const quantity = parseInt(item.Quantity);
+    return total + (price * quantity || 0);
+  }, 0);
+};
+
 
   const getCartItemCount = () => {
     if (!Array.isArray(cartItems)) return 0;
     return cartItems.reduce((count, item) => count + (item.CIQuantity || 1), 0);
   };
+
+  const clearCart = () => {
+    setCartItems([]); // clear frontend cart
+    localStorage.removeItem("cartItems");
+  };
+
+
 
   const value = {
     cartItems,
@@ -135,6 +154,7 @@ export const CartProvider = ({ children }) => {
     fetchCart,
     getCartTotal,
     getCartItemCount,
+    clearCart: () => setCartItems([]),
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
