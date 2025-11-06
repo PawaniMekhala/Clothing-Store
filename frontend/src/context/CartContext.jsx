@@ -42,7 +42,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Add to cart 
+  // Add to cart
   const addToCart = async (productId, quantity = 1, size, color) => {
     if (!isAuthenticated) {
       toast.error("Please login to add items to cart");
@@ -75,28 +75,26 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Update cart item 
+  // Update cart item
   const updateCartItem = async (productId, updatedData) => {
-  if (!isAuthenticated) return;
-  setLoading(true);
+    if (!isAuthenticated) return;
+    setLoading(true);
 
-  try {
-    const response = await cartAPI.updateCartItem(productId, updatedData);
-    toast.success(response.data?.message || "Cart item updated successfully");
+    try {
+      const response = await cartAPI.updateCartItem(productId, updatedData);
+      toast.success(response.data?.message || "Cart item updated successfully");
 
-    
-    await fetchCart();
+      await fetchCart();
 
-    return { success: true };
-  } catch (error) {
-    const message = error.response?.data?.message || "Failed to update cart";
-    toast.error(message);
-    return { success: false, error: message };
-  } finally {
-    setLoading(false);
-  }
-};
-
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to update cart";
+      toast.error(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Remove from cart
   const removeFromCart = async (productId) => {
@@ -123,27 +121,37 @@ export const CartProvider = ({ children }) => {
   };
 
   const getCartTotal = () => {
-  if (!cartItems || cartItems.length === 0) return 0;
+    if (!cartItems || cartItems.length === 0) return 0;
 
-  return cartItems.reduce((total, item) => {
-    const price = parseFloat(item.Price);
-    const quantity = parseInt(item.Quantity);
-    return total + (price * quantity || 0);
-  }, 0);
-};
-
+    return cartItems.reduce((total, item) => {
+      const price = parseFloat(item.Price);
+      const quantity = parseInt(item.Quantity);
+      return total + (price * quantity || 0);
+    }, 0);
+  };
 
   const getCartItemCount = () => {
     if (!Array.isArray(cartItems)) return 0;
     return cartItems.reduce((count, item) => count + (item.CIQuantity || 1), 0);
   };
 
-  const clearCart = () => {
-    setCartItems([]); // clear frontend cart
-    localStorage.removeItem("cartItems");
+  const clearCart = async () => {
+    if (!isAuthenticated) return;
+
+    setLoading(true);
+    try {
+      const response = await cartAPI.clearCart();
+      toast.success(response.data?.message || "Cart cleared successfully!");
+      setCartItems([]); // empty local cart state
+      return { success: true };
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to clear cart";
+      toast.error(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
   };
-
-
 
   const value = {
     cartItems,
@@ -154,7 +162,7 @@ export const CartProvider = ({ children }) => {
     fetchCart,
     getCartTotal,
     getCartItemCount,
-    clearCart: () => setCartItems([]),
+    clearCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
