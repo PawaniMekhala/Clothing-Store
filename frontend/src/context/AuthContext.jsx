@@ -12,6 +12,7 @@ export const useAuth = () => {
 
 const normalizeUser = (u) => {
     if (!u) return null;
+    const token = localStorage.getItem('token');
     return {
         id: u.UserID || u.id || null,
         name: `${u.FirstName || ''} ${u.LastName || ''}`.trim(),
@@ -19,7 +20,7 @@ const normalizeUser = (u) => {
         phone: u.Phone || u.phone || '',
         address: u.Address || u.address || '',
         profileImage: u.ProfilePicture || u.profileImage || '',
-        token: u.token || null,
+        token: u.token || token || null,
     };
 };
 
@@ -165,10 +166,10 @@ export const AuthProvider = ({ children }) => {
             setUser(updatedUser);
             localStorage.setItem('user', JSON.stringify(updatedUser));
 
-            alert('✅ Profile image updated successfully!');
+            alert('Profile image updated successfully!');
             return { success: true, user: updatedUser };
         } catch (error) {
-            console.error('❌ Upload error:', error);
+            console.error('Upload error:', error);
             alert('Something went wrong during upload.');
             return { success: false, error: error.message };
         }
@@ -176,7 +177,7 @@ export const AuthProvider = ({ children }) => {
 
     const deleteProfileImage = async () => {
         try {
-            const response = await fetch('http://localhost:5500/api/users/profile/image', {
+            const response = await fetch('http://localhost:5500/api/users/delete-profile-image', {
                 method: 'DELETE',
                 headers: {
                     Authorization: `Bearer ${user?.token}`,
@@ -194,9 +195,11 @@ export const AuthProvider = ({ children }) => {
                 profileImage: null,
             }));
 
+            toast.success(data.message || 'Profile image deleted successfully!');
             return { success: true };
         } catch (error) {
             console.error('Delete image error:', error);
+            toast.error(error.message || 'Error deleting profile image');
             return { success: false, error: error.message };
         }
     };
