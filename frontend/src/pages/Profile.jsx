@@ -75,8 +75,16 @@ const Profile = () => {
     const handleDeleteImage = async () => {
         if (window.confirm('Are you sure you want to delete your profile image?')) {
             setUploading(true);
-            await deleteProfileImage();
-            setUploading(false);
+            try {
+                const res = await deleteProfileImage();
+                toast.success(res.data?.message || 'Profile image deleted');
+                // refresh profile or reload user data
+                window.location.reload();
+            } catch (err) {
+                toast.error('Failed to delete profile image');
+            } finally {
+                setUploading(false);
+            }
         }
     };
 

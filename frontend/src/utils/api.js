@@ -39,7 +39,7 @@ export const authAPI = {
         formData.append('profilePicture', file);
         return api.put('/users/profile/image', formData);
     },
-    deleteProfileImage: () => api.delete('/users/profile/image'),
+    deleteProfileImage: () => api.delete('/users/delete-profile-image'),
 };
 
 export const productAPI = {
