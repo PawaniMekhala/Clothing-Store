@@ -4,23 +4,18 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5500/api'
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
 });
 
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        if (token) config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
     (error) => Promise.reject(error)
 );
 
-// Handle response errors
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -33,6 +28,7 @@ api.interceptors.response.use(
     }
 );
 
+// === API ENDPOINTS ===
 export const authAPI = {
     register: (data) => api.post('/users/register', data),
     login: (data) => api.post('/users/login', data),
@@ -46,13 +42,10 @@ export const authAPI = {
     deleteProfileImage: () => api.delete('/users/profile/image'),
 };
 
-// other APIs
 export const productAPI = {
     getAllProducts: () => api.get('/products/get-all-products'),
-
-    getProductsByCategory: (category) => api.get(`/products/get-products-by-category/${category}`),
-
-    getProductById: (id) => api.get(`/products/get-product-by-id/${id}`),
+    getProductsByCategoryId: (categoryId) => api.get(`/products/category/${categoryId}`),
+    getProductById: (productId) => api.get(`/products/${productId}`),
 };
 
 export const cartAPI = {

@@ -21,12 +21,31 @@ const Products = () => {
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const response = category
-                ? await productAPI.getProductsByCategory(category)
-                : await productAPI.getAllProducts();
-            setProducts(response.data.products);
+            let response;
+            if (category) {
+                if (!isNaN(Number(category))) {
+                    response = await productAPI.getProductsByCategoryId(category);
+                } else {
+                    response = await productAPI.getAllProducts();
+                }
+            } else {
+                response = await productAPI.getAllProducts();
+            }
+
+            const all = response.data?.products ?? response.data?.productList ?? [];
+            let filtered = all;
+
+            if (category && isNaN(Number(category))) {
+                filtered = all.filter((p) => {
+                    const catName = p?.Category?.CategoryName ?? p?.category ?? p?.gender;
+                    return catName?.toLowerCase() === String(category).toLowerCase();
+                });
+            }
+
+            setProducts(filtered);
         } catch (error) {
             console.error('Error fetching products:', error);
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -37,20 +56,24 @@ const Products = () => {
     };
 
     const filteredProducts = products.filter((product) => {
-        if (filters.minPrice && product.price < parseFloat(filters.minPrice)) return false;
-        if (filters.maxPrice && product.price > parseFloat(filters.maxPrice)) return false;
-        if (filters.color && product.color !== filters.color) return false;
-        if (filters.size && product.sizes && !product.sizes.includes(filters.size)) return false;
+        const price = parseFloat(product.Price ?? product.price ?? 0);
+        const color = product.ProductColor ?? product.color ?? '';
+        const rawSizes = product.sizes ?? product.Sizes ?? product.ProductSize ?? product.size ?? '';
+        let sizes = [];
+        if (Array.isArray(rawSizes)) sizes = rawSizes;
+        else if (typeof rawSizes === 'string' && rawSizes.includes(','))
+            sizes = rawSizes.split(',').map((s) => s.trim());
+        else if (rawSizes) sizes = [String(rawSizes)];
+
+        if (filters.minPrice && price < parseFloat(filters.minPrice)) return false;
+        if (filters.maxPrice && price > parseFloat(filters.maxPrice)) return false;
+        if (filters.color && color.toLowerCase() !== filters.color.toLowerCase()) return false;
+        if (filters.size && !sizes.includes(filters.size)) return false;
         return true;
     });
 
     const clearFilters = () => {
-        setFilters({
-            minPrice: '',
-            maxPrice: '',
-            color: '',
-            size: '',
-        });
+        setFilters({ minPrice: '', maxPrice: '', color: '', size: '' });
     };
 
     return (
@@ -100,12 +123,11 @@ const Products = () => {
                                 onChange={(e) => handleFilterChange('size', e.target.value)}
                                 className="input-field text-sm">
                                 <option value="">All Sizes</option>
-                                <option value="XS">XS</option>
-                                <option value="S">S</option>
-                                <option value="M">M</option>
-                                <option value="L">L</option>
-                                <option value="XL">XL</option>
-                                <option value="XXL">XXL</option>
+                                {['XS', 'S', 'M', 'L', 'XL', 'XXL'].map((s) => (
+                                    <option key={s} value={s}>
+                                        {s}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -117,15 +139,13 @@ const Products = () => {
                                 onChange={(e) => handleFilterChange('color', e.target.value)}
                                 className="input-field text-sm">
                                 <option value="">All Colors</option>
-                                <option value="Black">Black</option>
-                                <option value="White">White</option>
-                                <option value="Red">Red</option>
-                                <option value="Blue">Blue</option>
-                                <option value="Green">Green</option>
-                                <option value="Yellow">Yellow</option>
-                                <option value="Gray">Gray</option>
-                                <option value="Navy">Navy</option>
-                                <option value="Brown">Brown</option>
+                                {['Black', 'White', 'Red', 'Blue', 'Green', 'Yellow', 'Gray', 'Navy', 'Brown'].map(
+                                    (c) => (
+                                        <option key={c} value={c}>
+                                            {c}
+                                        </option>
+                                    )
+                                )}
                             </select>
                         </div>
                     </aside>
@@ -138,22 +158,14 @@ const Products = () => {
                             </div>
                         ) : filteredProducts.length === 0 ? (
                             <div className="text-center py-20">
-                                <p className="text-gray-500 text-xl">No products found matching your filters.</p>
+                                <p className="text-gray-500 text-xl">No products found.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredProducts.map((product) => (
                                     <ProductCard
-                                        key={product.ProductID}
-                                        product={{
-                                            id: product.ProductID,
-                                            name: product.ProductName,
-                                            description: product.Description,
-                                            price: product.price,
-                                            image: product.ImagePath,
-                                            color: product.ProductColor,
-                                            size: product.ProductSize,
-                                        }}
+                                        key={product.ProductID ?? product.id ?? product._id}
+                                        product={product}
                                     />
                                 ))}
                             </div>
