@@ -3,20 +3,11 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext"; // adjust path if needed
 
 const CheckoutSuccess = () => {
-  const { clearCart } = useCart();
-
-  useEffect(() => {
-    // Safely clear cart on mount
-    if (clearCart) {
-      clearCart();
-    }
-  }, [clearCart]);
-
   return (
     <div className="text-center mt-20">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="w-20 h-20 mx-auto text-green-600 mb-4"
+        className="w-20 h-20 mx-auto text-primary-600 mb-4"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -29,14 +20,10 @@ const CheckoutSuccess = () => {
         />
       </svg>
 
-      <h1 className="text-3xl font-bold text-green-600 mb-2">
+      <h1 className="text-3xl font-bold text-primary-600 mb-2">
         Order Confirmed!
       </h1>
-      <p className="text-gray-600 mb-6">
-        Thank you for shopping with us.
-      </p>
-
-      
+      <p className="text-gray-600 mb-6">Thank you for shopping with us.</p>
     </div>
   );
 };
